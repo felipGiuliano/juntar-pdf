@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+_servidor.log
+dist/
+build/
+*.spec

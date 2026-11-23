@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juntar PDF — colagem vertical</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --cartao:#ffffff; --tinta:#1b2430; --suave:#5b6673;
+    --linha:#e3e8ef; --azul:#1f6feb; --azul-escuro:#1657c4; --azul-fraco:#eaf1fe;
+    --verde:#1a7f46; --vermelho:#c0392b; --sombra:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tinta);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;line-height:1.5}
+  .topo{padding:22px 24px;border-bottom:1px solid var(--linha);background:var(--cartao)}
+  .topo h1{margin:0;font-size:19px;font-weight:650;letter-spacing:.2px}
+  .topo p{margin:4px 0 0;color:var(--suave);font-size:13px}
+  .wrap{max-width:1040px;margin:0 auto;padding:24px;display:grid;
+    grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:860px){.wrap{grid-template-columns:1fr}}
+  .cartao{background:var(--cartao);border:1px solid var(--linha);border-radius:12px;
+    box-shadow:var(--sombra);padding:18px}
+  .cartao h2{margin:0 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--suave)}
+  .solta{border:2px dashed #c3ccd9;border-radius:12px;padding:30px 18px;text-align:center;
+    transition:.15s;cursor:pointer;background:#fbfcfe}
+  .solta.sobre{border-color:var(--azul);background:var(--azul-fraco)}
+  .solta .ic{font-size:30px}
+  .solta b{display:block;margin-top:8px;font-size:15px}
+  .solta span{color:var(--suave);font-size:13px}
+  .botao{appearance:none;border:1px solid var(--linha);background:#fff;color:var(--tinta);
+    border-radius:9px;padding:9px 14px;font-size:14px;cursor:pointer;font-weight:550;transition:.12s}
+  .botao:hover{background:#f3f6fb}
+  .botao.primario{background:var(--azul);border-color:var(--azul);color:#fff}
+  .botao.primario:hover{background:var(--azul-escuro)}
+  .botao.primario:disabled{background:#9fb8e6;border-color:#9fb8e6;cursor:not-allowed}
+  .botao.fantasma{background:transparent;border-color:transparent;color:var(--suave);padding:6px 8px}
+  .acoes{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+  .lista{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .item{border:1px solid var(--linha);border-radius:10px;background:#fff;padding:10px 12px}
+  .item.arrastando{opacity:.5}
+  .item.alvo{border-color:var(--azul);box-shadow:0 0 0 2px var(--azul-fraco)}
+  .linha1{display:flex;align-items:center;gap:10px}
+  .ordem{width:26px;height:26px;flex:0 0 auto;border-radius:50%;background:var(--azul-fraco);
+    color:var(--azul-escuro);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .pega{cursor:grab;color:#9aa6b4;font-size:17px;padding:0 2px;user-select:none}
+  .nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:550}
+  .tam{color:var(--suave);font-size:12px;flex:0 0 auto}
+  .mini{display:flex;gap:2px;flex:0 0 auto}
+  .mini button{border:none;background:transparent;cursor:pointer;color:var(--suave);font-size:15px;
+    width:28px;height:28px;border-radius:7px;line-height:1}
+  .mini button:hover{background:#f0f3f8;color:var(--tinta)}
+  .mini button:disabled{opacity:.3;cursor:not-allowed}
+  .prev{margin-top:10px;display:none}
+  .prev.aberto{display:block}
+  .prev embed,.prev iframe{width:100%;height:260px;border:1px solid var(--linha);border-radius:8px;background:#fff}
+  .vazio{color:var(--suave);font-size:13px;padding:10px 2px}
+  .result embed{width:100%;height:520px;border:1px solid var(--linha);border-radius:8px;background:#fff}
+  .aviso{border-radius:9px;padding:11px 13px;font-size:13.5px;margin-top:12px;display:none}
+  .aviso.erro{display:block;background:#fdecea;border:1px solid #f5c2bd;color:#8a231b}
+  .aviso.ok{display:block;background:#e8f6ee;border:1px solid #bfe3cd;color:#145c32}
+  .info{color:var(--suave);font-size:13px;margin-top:10px}
+  .carregando{display:none;align-items:center;gap:10px;color:var(--suave);font-size:14px;margin-top:12px}
+  .carregando.ativo{display:flex}
+  .giro{width:17px;height:17px;border:2.5px solid #d4dae3;border-top-color:var(--azul);border-radius:50%;
+    animation:g .8s linear infinite}
+  @keyframes g{to{transform:rotate(360deg)}}
+  .dica{font-size:12px;color:var(--suave);margin-top:8px}
+  .passo{display:inline-block;background:var(--azul-fraco);color:var(--azul-escuro);border-radius:6px;
+    font-size:11px;font-weight:700;padding:2px 7px;margin-right:6px}
+  .modo{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;border:1px solid var(--linha);
+    border-radius:10px;background:#fbfcfe;cursor:pointer}
+  .modo input{margin-top:2px;width:16px;height:16px;flex:0 0 auto;cursor:pointer}
+  .modo .tx b{font-size:13.5px}
+  .modo .tx span{display:block;color:var(--suave);font-size:12.5px;margin-top:2px}
+  .badge{display:inline-block;background:#fff3d6;color:#8a5a00;border:1px solid #f0d79a;border-radius:5px;
+    font-size:10px;font-weight:700;padding:1px 6px;margin-left:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+  <div class="topo">
+    <h1>Juntar PDF — colagem vertical</h1>
+    <p>Cola os documentos um abaixo do outro, numa página contínua, na ordem em que você anexar. Tudo é processado só nesta máquina — nada é enviado para a internet.</p>
+  </div>
+
+  <div class="wrap">
+    <!-- COLUNA 1: anexar + lista -->
+    <div class="cartao">
+      <h2><span class="passo">1</span>Anexe e ordene os PDFs</h2>
+      <div class="solta" id="solta">
+        <div class="ic">⬍</div>
+        <b>Arraste os PDFs aqui</b>
+        <span>ou clique para escolher no computador</span>
+      </div>
+      <input type="file" id="entrada" accept="application/pdf,.pdf" multiple hidden>
+
+      <ul class="lista" id="lista"></ul>
+      <div class="vazio" id="vazio">Nenhum arquivo anexado ainda.</div>
+      <div class="dica" id="dica" style="display:none">Arraste pela alça ⠿ ou use ▲▼ para mudar a ordem. A ordem de cima para baixo é a ordem no PDF final.</div>
+
+      <label class="modo" for="chaveRepetir">
+        <input type="checkbox" id="chaveRepetir">
+        <span class="tx">
+          <b>Repetir o 1º documento com cada um dos outros</b>
+          <span>Gera um PDF por par: 1+2, 1+3, 1+4… (o 1º colado em cima de cada um dos demais). Baixa todos num ZIP. Use quando o 1º for um documento base — ex.: um contrato — para casar com vários.</span>
+        </span>
+      </label>
+
+      <div class="acoes">
+        <button class="botao primario" id="btJuntar" disabled>Juntar PDFs</button>
+        <button class="botao" id="btAdicionar">Adicionar mais</button>
+        <button class="botao fantasma" id="btLimpar">Limpar tudo</button>
+      </div>
+      <div class="carregando" id="carregando"><span class="giro"></span> Montando a composição vertical…</div>
+      <div class="aviso" id="erro"></div>
+    </div>
+
+    <!-- COLUNA 2: resultado -->
+    <div class="cartao result">
+      <h2><span class="passo">2</span>Resultado</h2>
+      <div class="aviso" id="okMsg"></div>
+      <div id="semResultado" class="vazio">O PDF juntado vai aparecer aqui para você conferir antes de baixar.</div>
+      <div id="areaResultado" style="display:none">
+        <embed id="visor" type="application/pdf">
+        <div class="acoes">
+          <button class="botao primario" id="btBaixar">Baixar PDF</button>
+          <button class="botao" id="btNova">Nova junção</button>
+        </div>
+        <div class="info" id="infoResultado"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const solta=$("#solta"), entrada=$("#entrada"), lista=$("#lista"), vazio=$("#vazio"),
+        dica=$("#dica"), btJuntar=$("#btJuntar"), erro=$("#erro"), carregando=$("#carregando"),
+        okMsg=$("#okMsg"), semResultado=$("#semResultado"), areaResultado=$("#areaResultado"),
+        visor=$("#visor"), infoResultado=$("#infoResultado"), chaveRepetir=$("#chaveRepetir");
+  let itens=[];           // {id, file, url}
+  let seq=0, urlResultado=null, arrastId=null;
+
+  function fmtTam(b){ return b<1024?b+" B":b<1048576?(b/1024).toFixed(0)+" KB":(b/1048576).toFixed(1)+" MB"; }
+
+  function adicionar(files){
+    for(const f of files){
+      const ehPdf = f.type==="application/pdf" || /\.pdf$/i.test(f.name);
+      if(!ehPdf){ mostrarErro(`"${f.name}" não é PDF e foi ignorado.`); continue; }
+      itens.push({id:++seq, file:f, url:URL.createObjectURL(f)});
+    }
+    render();
+  }
+
+  function remover(id){
+    const i=itens.findIndex(x=>x.id===id);
+    if(i>=0){ URL.revokeObjectURL(itens[i].url); itens.splice(i,1); render(); }
+  }
+  function mover(id,d){
+    const i=itens.findIndex(x=>x.id===id); const j=i+d;
+    if(j<0||j>=itens.length) return;
+    [itens[i],itens[j]]=[itens[j],itens[i]]; render();
+  }
+
+  function render(){
+    lista.innerHTML="";
+    itens.forEach((it,idx)=>{
+      const li=document.createElement("li");
+      li.className="item"; li.draggable=true; li.dataset.id=it.id;
+      li.innerHTML=`
+        <div class="linha1">
+          <span class="pega" title="Arraste para reordenar">⠿</span>
+          <span class="ordem">${idx+1}</span>
+          <span class="nome" title="${it.file.name}">${it.file.name}${(chaveRepetir.checked&&idx===0)?'<span class="badge">base · repete</span>':''}</span>
+          <span class="tam">${fmtTam(it.file.size)}</span>
+          <span class="mini">
+            <button data-a="ver" title="Pré-visualizar">👁</button>
+            <button data-a="cima" title="Subir" ${idx===0?"disabled":""}>▲</button>
+            <button data-a="baixo" title="Descer" ${idx===itens.length-1?"disabled":""}>▼</button>
+            <button data-a="rem" title="Remover">✕</button>
+          </span>
+        </div>
+        <div class="prev"><embed type="application/pdf" src="${it.url}#toolbar=0"></div>`;
+      li.querySelector('[data-a="ver"]').onclick=()=>li.querySelector(".prev").classList.toggle("aberto");
+      li.querySelector('[data-a="cima"]').onclick=()=>mover(it.id,-1);
+      li.querySelector('[data-a="baixo"]').onclick=()=>mover(it.id,1);
+      li.querySelector('[data-a="rem"]').onclick=()=>remover(it.id);
+      // arrastar para reordenar
+      li.addEventListener("dragstart",e=>{arrastId=it.id;li.classList.add("arrastando");});
+      li.addEventListener("dragend",()=>{arrastId=null;li.classList.remove("arrastando");document.querySelectorAll(".item").forEach(x=>x.classList.remove("alvo"));});
+      li.addEventListener("dragover",e=>{e.preventDefault();li.classList.add("alvo");});
+      li.addEventListener("dragleave",()=>li.classList.remove("alvo"));
+      li.addEventListener("drop",e=>{e.preventDefault();li.classList.remove("alvo");
+        if(arrastId==null||arrastId===it.id)return;
+        const de=itens.findIndex(x=>x.id===arrastId), para=itens.findIndex(x=>x.id===it.id);
+        const [m]=itens.splice(de,1); itens.splice(para,0,m); render();});
+      lista.appendChild(li);
+    });
+    const tem=itens.length>0, rep=chaveRepetir.checked;
+    vazio.style.display=tem?"none":"block";
+    dica.style.display=itens.length>1?"block":"none";
+    btJuntar.disabled = rep ? itens.length<2 : itens.length<1;
+    if(rep){
+      const pares=Math.max(itens.length-1,0);
+      btJuntar.textContent = pares>1 ? `Gerar ${pares} documentos` : "Gerar documento";
+    } else {
+      btJuntar.textContent = itens.length>1 ? `Juntar ${itens.length} PDFs` : "Juntar PDFs";
+    }
+  }
+  chaveRepetir.addEventListener("change", render);
+
+  function mostrarErro(m){ erro.textContent=m; erro.classList.add("erro"); setTimeout(()=>{},0); }
+  function limparErro(){ erro.textContent=""; erro.classList.remove("erro"); }
+
+  // eventos de anexar
+  solta.onclick=()=>entrada.click();
+  $("#btAdicionar").onclick=()=>entrada.click();
+  entrada.onchange=()=>{ adicionar(entrada.files); entrada.value=""; };
+  ["dragenter","dragover"].forEach(ev=>solta.addEventListener(ev,e=>{e.preventDefault();solta.classList.add("sobre");}));
+  ["dragleave","drop"].forEach(ev=>solta.addEventListener(ev,e=>{e.preventDefault();solta.classList.remove("sobre");}));
+  solta.addEventListener("drop",e=>{ if(e.dataTransfer.files.length) adicionar(e.dataTransfer.files); });
+
+  $("#btLimpar").onclick=()=>{ itens.forEach(x=>URL.revokeObjectURL(x.url)); itens=[]; render(); limparErro(); resetResultado(); };
+
+  function resetResultado(){
+    okMsg.classList.remove("ok"); okMsg.textContent="";
+    areaResultado.style.display="none"; semResultado.style.display="block";
+    if(urlResultado){URL.revokeObjectURL(urlResultado);urlResultado=null;}
+  }
+  $("#btNova").onclick=()=>{ $("#btLimpar").click(); window.scrollTo({top:0,behavior:"smooth"}); };
+
+  btJuntar.onclick=async()=>{
+    const rep=chaveRepetir.checked;
+    if(rep ? itens.length<2 : itens.length<1) return;
+    limparErro(); resetResultado();
+    carregando.querySelector("span.giro").nextSibling.textContent = rep ? " Gerando os documentos…" : " Montando a composição vertical…";
+    btJuntar.disabled=true; carregando.classList.add("ativo");
+    try{
+      const fd=new FormData();
+      itens.forEach(it=>fd.append("arquivos", it.file, it.file.name));
+      fd.append("modo", rep ? "repetir" : "unico");
+      const resp=await fetch("/juntar",{method:"POST",body:fd});
+      const info=await resp.json();
+      if(!resp.ok || !info.ok){ throw new Error(info.erro||"Não foi possível gerar os arquivos."); }
+
+      // prévia: o 1º par (modo repetir) ou o próprio resultado (modo único)
+      visor.src="/previa?t="+Date.now()+"#toolbar=1";
+      semResultado.style.display="none"; areaResultado.style.display="block";
+      okMsg.classList.add("ok");
+
+      if(info.tipo==="zip"){
+        okMsg.innerHTML=`<b>Pronto!</b> ${info.pares} documentos gerados — o 1º (“${enc(info.base)}”) colado com cada um dos outros.`;
+        $("#btBaixar").textContent="Baixar ZIP";
+        const linhas=(info.itens||[]).map((x,i)=>`${i+1}. ${enc(x.nome)}`).join("  ·  ");
+        infoResultado.textContent=`Acima está o 1º par (prévia). Clique em Baixar ZIP para pegar todos. Arquivos: ${linhas}`;
+      } else if(rep){
+        okMsg.innerHTML=`<b>Pronto!</b> 1 documento gerado: o 1º colado com o outro.`;
+        $("#btBaixar").textContent="Baixar PDF";
+        infoResultado.textContent=`Confira acima e clique em Baixar PDF.`;
+      } else {
+        const d=(info.dimensoes||[]);
+        const dimTxt=d.map(x=>`${x.larg_cm}×${x.alt_cm} cm`).join(" · ");
+        const nPag=info.paginas_resultado||d.length;
+        $("#btBaixar").textContent="Baixar PDF";
+        okMsg.innerHTML=`<b>Pronto!</b> ${info.arquivos} documento(s), ${info.paginas_origem} página(s) `+
+          `coladas numa composição de ${nPag>1?nPag+" páginas altas":"1 página alta"}.`;
+        infoResultado.textContent=`Dimensão: ${dimTxt}. Confira acima e clique em Baixar PDF.`+
+          (nPag>1?` (Foram ${nPag} páginas porque a altura passou do limite de 200 polegadas do formato PDF.)`:"");
+      }
+    }catch(e){
+      mostrarErro(e.message||String(e));
+    }finally{
+      carregando.classList.remove("ativo"); btJuntar.disabled=false;
+    }
+  };
+  function enc(s){ const d=document.createElement("div"); d.textContent=s==null?"":s; return d.innerHTML; }
+
+  $("#btBaixar").onclick=()=>{ location.href="/baixar"; };
+
+  render();
+})();
+</script>
+</body>
+</html>

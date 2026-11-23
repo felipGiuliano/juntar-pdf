@@ -1,0 +1,52 @@
+JUNTAR PDF — colagem vertical
+=============================
+
+O que faz
+---------
+Cola dois ou mais PDFs UM ABAIXO DO OUTRO, numa página contínua (de dimensões
+ampliadas), na ordem em que você anexar. Serve para, por exemplo, juntar um
+contrato e uma planilha de débito num único documento.
+
+NÃO é a junção comum de páginas soltas: os documentos ficam colados na vertical,
+como uma folha única e comprida.
+
+Dois modos:
+- Normal: cola todos num documento só.
+- "Repetir o 1º documento com cada um dos outros": o 1º vira a base e é colado em
+  cima de cada um dos demais (1+2, 1+3, 1+4...), gerando um PDF por par, baixados
+  num ZIP. Ex.: um contrato-base para casar com vários débitos.
+
+Como usar
+---------
+1. Dê dois cliques em "Juntar PDF.bat". Abre uma janela preta (deixe aberta) e o
+   navegador com a ferramenta.
+2. Arraste os PDFs para a área central, ou clique para escolher.
+3. Ordene com a alça (arrastar) ou com as setas ▲▼. A ordem de cima para baixo é
+   a ordem no PDF final. Dá para pré-visualizar cada um (botão 👁) e remover (✕).
+4. Clique em "Juntar PDFs".
+5. Confira o resultado na coluna da direita e clique em "Baixar PDF".
+6. "Nova junção" limpa tudo para começar de novo.
+Para encerrar, feche a janela preta.
+
+Garantias (por que não estraga os documentos)
+----------------------------------------------
+- Nada sai da sua máquina: o processamento é todo local (127.0.0.1). Diferente de
+  sites como o iLovePDF, nenhum arquivo é enviado para a internet.
+- Sem perda de qualidade: cada página entra como objeto vetorial (texto continua
+  texto, imagem na resolução original). Não é "foto" da página.
+- Respeita o tamanho de cada documento. Se um for mais estreito, fica centralizado
+  e sobra branco nas laterais — nunca corta nem estica.
+- Páginas giradas (digitalizações) são endireitadas antes de colar.
+- Limite do formato PDF: uma página não passa de 200 polegadas (~508 cm) de altura.
+  Enquanto a pilha couber, é uma página alta só; se passar (ex.: um contrato de
+  muitas páginas), o resultado segue na próxima página alta, sem cortar nada.
+
+Arquivos desta pasta
+--------------------
+- app.py            o servidor local e a interface
+- juntar_pdf.py     o motor da junção vertical (pode ser usado sozinho:
+                    python juntar_pdf.py saida.pdf a.pdf b.pdf)
+- templates/        a tela (index.html)
+- Juntar PDF.bat    o atalho para abrir
+
+Precisa de Python com pypdf, reportlab e flask (já instalados nesta máquina).
